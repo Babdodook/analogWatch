@@ -21,7 +21,7 @@ void pos(int x, int y)
 
 void setPixel(int x, int y)
 {
-	pos(x, y); cout << "¡¤";
+	pos(x, y); cout << "¡á";
 }
 
 /*	12½Ã
@@ -36,7 +36,6 @@ void drawCircle()
 	int r = 13;
 	int x, y;
 
-
 	for (int i = 1; i < 360; i++)
 	{
 		if (i != 90)
@@ -45,7 +44,6 @@ void drawCircle()
 			y = sin(i * DEG2RAD) * r + 15;
 			Circle[y][x] = 1;
 		}
-		// cout << x << ", " << y << endl;
 	}
 
 	Circle[SIZE / 2][SIZE / 2] = 1;
@@ -69,6 +67,8 @@ void drawCircle()
 		cout << endl;
 	}
 
+	pos(30, 1); cout << "12";
+	pos(1, 30); cout << "a";
 }
 
 int main()
