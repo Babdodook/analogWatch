@@ -36,6 +36,10 @@ int main()
 	float second;
 	float minute;
 	float hour;
+	
+	/*time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	cout << tm.tm_hour << endl;*/
 
 	while (1)
 	{
@@ -47,7 +51,11 @@ int main()
 		hour = tm.tm_hour;
 
 		if (hour > 12)
-			hour = (hour - 12) * 30 - 90;
+			hour = (hour- 12) * 30 - 90;
+		else if (hour == 0)
+			hour = 270;
+		else
+			hour = hour * 30 - 90;
 
 		pos(0, 0);
 		memset(Watch, 0, sizeof(int) * SIZE * SIZE);
