@@ -1,55 +1,65 @@
 #pragma once
+#pragma warning(disable:4996)
 
 #include<iostream>
 #define _USE_MATH_DEFINES
 #include<math.h>
 #include<Windows.h>
+#include<time.h>
 using namespace std;
 
 #define SIZE 30
 #define DEG2RAD M_PI/180
 
-void Draw(int);
-void plotLine(int sx, int sy, int fx, int fy);
-void plotLineLow(int sx, int sy, int fx, int fy);
-void plotLineHigh(int sx, int sy, int fx, int fy);
+#define SPACE 0
+#define EDGE 101
+#define SEC 102
+#define MIN 103
+#define HOUR 104
 
-int Circle[SIZE][SIZE];
+void DrawTime(float,float,float);
+void plotLine(int x0, int y0, int x1, int y1, int type);
+void pos(int x, int y);
+void color(unsigned short color);
 
-void pos(int x, int y)
-{
-	COORD Pos;
-	Pos.X = x;
-	Pos.Y = y;
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
-}
+void OldplotLine(int sx, int sy, int fx, int fy);
+void OldplotLineLow(int sx, int sy, int fx, int fy);
+void OldplotLineHigh(int sx, int sy, int fx, int fy);
 
-void setPixel(int x, int y)
-{
-	pos(x, y); cout << "■";
-}
-
+int Watch[SIZE][SIZE];
 
 int main()
 {
-	system("mode con cols=80 lines=40");
+	system("mode con cols=60 lines=31");
+	system("tiTle Analog Watch");
 
-	int timerad = 0;
-	memset(Circle, 0, sizeof(int) * SIZE * SIZE);
-	Draw(timerad);
-	/*while (1)
+	float second;
+	float minute;
+	float hour;
+
+	while (1)
 	{
-		memset(Circle, 0, sizeof(int) * SIZE * SIZE);
-		Draw(timerad);
-		Sleep(1000);
-		system("cls");
-		timerad += 10;
-	}*/
+		time_t t = time(NULL);
+		struct tm tm = *localtime(&t);
+
+		second = tm.tm_sec * 6 - 90;
+		minute = tm.tm_min * 6 - 90;
+		hour = tm.tm_hour;
+
+		if (hour > 12)
+			hour = (hour - 12) * 30 - 90;
+
+		pos(0, 0);
+		memset(Watch, 0, sizeof(int) * SIZE * SIZE);
+		DrawTime(second,minute,hour);
+
+		Sleep(1000);		
+	}
 	return 0;
 }
 
 
-void Draw(int timerad)
+void DrawTime(float second, float minute, float hour)
 {
 	int r = 13;
 	int x, y;
@@ -60,77 +70,152 @@ void Draw(int timerad)
 		{
 			x = cos(i * DEG2RAD) * r + 15;
 			y = sin(i * DEG2RAD) * r + 15;
-			Circle[y][x] = 1;
+			Watch[y][x] = EDGE;
 		}
 	}
 
-	Circle[SIZE / 2][SIZE / 2] = 1;
-	Circle[SIZE / 2 - 1][SIZE / 2] = 1;
-	Circle[SIZE / 2][SIZE / 2 - 1] = 1;
-	Circle[SIZE / 2 - 1][SIZE / 2 - 1] = 1;
-
-	int Fx = cos(350 * DEG2RAD) * r + 15;
-	int Fy = sin(350 * DEG2RAD) * r + 15;
+	int count = 3;
+	for (int i = 0; i < 360; i += 30)
+	{
+			x = cos(i * DEG2RAD) * 14 + 15;
+			y = sin(i * DEG2RAD) * 14 + 15;
+			Watch[y][x] = count;
+			count++;
+			if (count > 12)
+				count = 1;
+	}
 
 	int centerX = SIZE / 2;
 	int centerY = SIZE / 2;
 
-	cout << "(" << centerX << "," << centerY << ") " << " - (" << Fx << "," << Fy << ") " << endl;
+	r = 10;
+	int secX = cos(second * DEG2RAD) * r + 15;
+	int secY = sin(second * DEG2RAD) * r + 15;
 
-	plotLine(centerX, centerY, Fx, Fy);
+	r = 11;
+	int minX = cos(minute * DEG2RAD) * r + 15;
+	int minY = sin(minute * DEG2RAD) * r + 15;
 
-	//plotLineHigh(Fx, Fy, centerX, centerY);
-	//*
+	r = 7;
+	int hourX = cos(hour * DEG2RAD) * r + 15;
+	int hourY = sin(hour * DEG2RAD) * r + 15;
+
+	plotLine(centerX, centerY, secX, secY, SEC);
+	plotLine(centerX, centerY, minX, minY, MIN);
+	plotLine(centerX, centerY, hourX, hourY, HOUR);
+
 	for (int i = 0; i < SIZE; i++)
 	{
 		for (int j = 0; j < SIZE; j++)
 		{
-			if (Circle[i][j] == 1)
+			if (Watch[i][j] == SPACE)
 			{
-				cout << "□";
+				color(15);
+				cout << "　";
 			}
-			else if (Circle[i][j] == 0)
+			else if (Watch[i][j] == EDGE)
 			{
+				color(15);
 				cout << "■";
 			}
+			else if(Watch[i][j] == SEC)
+			{
+				color(12);
+				cout << "＊";
+			}
+			else if (Watch[i][j] == MIN)
+			{
+				color(15);
+				cout << "◆";
+			}
+			else if (Watch[i][j] == HOUR)
+			{
+				color(15);
+				cout << "●";
+			}
+			else 
+			{
+				color(15);
+				if(Watch[i][j] >= 10)
+					cout << Watch[i][j];
+				else
+				 cout << Watch[i][j] << " ";
+			}
+			
 		}
 		cout << endl;
 	}
-	//*/
-
-
-	pos(30, 1); cout << "12";
-	pos(1, 30); cout << "a";
 }
 
-void plotLine(int sx, int sy, int fx, int fy)
+void plotLine(int x0, int y0, int x1, int y1, int type)
+{
+	int dx = abs(x1 - x0);
+	int sx = x0 < x1 ? 1 : -1;
+	int dy = -abs(y1 - y0);
+	int sy = y0 < y1 ? 1 : -1;
+	int err = dx + dy;
+
+	while (true)
+	{
+		Watch[y0][x0] = type;
+		if (x0 == x1 && y0 == y1)
+			break;
+		int e2 = 2 * err;
+		if (e2 >= dy)
+		{
+			err += dy;
+			x0 += sx;
+		}
+		if (e2 <= dx)
+		{
+			err += dx;
+			y0 += sy;
+		}
+	}
+}
+
+void pos(int x, int y)
+{
+	COORD Pos;
+	Pos.X = x;
+	Pos.Y = y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
+}
+
+void color(unsigned short color)
+{
+	HANDLE hCon = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hCon, color);
+}
+
+void OldplotLine(int sx, int sy, int fx, int fy)
 {
 	if (sx < fx)
 	{
 		if (fx > fy)
 		{
-			plotLineLow(sx, sy, fx, fy);
+			OldplotLineLow(sx, sy, fx, fy);
 		}
 		else if (fx < fy)
 		{
-			plotLineHigh(sx, sy, fx, fy);
+			OldplotLineHigh(sx, sy, fx, fy);
 		}
 	}
 	else if (sx > fx)
 	{
 		if (fx < fy)
 		{
-			plotLineLow(fx, fy, sx, sy);
+			OldplotLineLow(fx, fy, sx, sy);
 		}
 		else if (fx > fy)
 		{
-			plotLineHigh(fx, fy, sx, sy);
+			OldplotLineHigh(fx, fy, sx, sy);
 		}
 	}
 
 	if (sx < fx && sy > fy)
 	{
-		plotLineLow(sx, sy, fx, fy);
+		OldplotLineLow(sx, sy, fx, fy);
 	}
 	/*
 	if (abs(fy - sy) < abs(fx - sx))	//절댓값 fy - sy < 절댓값 fx - sx 
@@ -150,7 +235,7 @@ void plotLine(int sx, int sy, int fx, int fy)
 	*/
 }
 
-void plotLineLow(int sx, int sy, int fx, int fy)	//x가 y보다 클때
+void OldplotLineLow(int sx, int sy, int fx, int fy)	//x가 y보다 클때
 {
 	int x = sx;
 	int y = sy;
@@ -165,7 +250,7 @@ void plotLineLow(int sx, int sy, int fx, int fy)	//x가 y보다 클때
 
 	for (x = sx; x < fx; x++)
 	{
-		Circle[y][x] = 1;
+		Watch[y][x] = 1;
 
 		if (F < 0)
 			F += dF1;
@@ -177,7 +262,7 @@ void plotLineLow(int sx, int sy, int fx, int fy)	//x가 y보다 클때
 	}	
 }
 
-void plotLineHigh(int sx, int sy, int fx, int fy)	//y가 x보다 클때
+void OldplotLineHigh(int sx, int sy, int fx, int fy)	//y가 x보다 클때
 {
 	int x = sx;
 	int y = sy;
@@ -192,7 +277,7 @@ void plotLineHigh(int sx, int sy, int fx, int fy)	//y가 x보다 클때
 
 	for (y = sy; y < fy; y++)
 	{
-		Circle[y][x] = 1;
+		Watch[y][x] = 1;
 
 		if (F < 0)
 			F += dF1;
